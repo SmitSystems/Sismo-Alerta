@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sismos en vivo</title>
+<meta name="theme-color" content="#16324f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{--bg:#eef2f5;--card:#fff;--ink:#12263a;--mut:#566879;--line:#d3dce4;--acc:#16324f;--red:#c62828;--amb:#b87400;--grn:#2e7d5b;--on:#fff;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1823;--card:#14263a;--ink:#e8eef4;--mut:#9db0c1;--line:#243b53;--acc:#8cbdea;--red:#ff7b70;--amb:#f0b64a;--grn:#62cb9d;--on:#0d1823;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+main{max-width:760px;margin:0 auto;padding:14px}
+h1{font-size:1.5rem;margin:0}h2{font-size:1.05rem;margin:0 0 8px}
+.top{padding:6px 0 10px}.st{color:var(--mut);font-size:.85rem;margin:2px 0 8px}
+.dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--mut);margin-right:4px}.dot.ok{background:var(--grn)}.dot.bad{background:var(--red)}
+#tr{width:100%;height:64px;display:block;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#tr path{fill:none;stroke:var(--acc);stroke-width:1.4;vector-effect:non-scaling-stroke}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.set{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+label{display:grid;gap:3px;font-size:.85rem;color:var(--mut)}
+select,button,a.b{font:inherit;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);min-height:42px}
+button,a.b{cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.p{background:var(--acc);color:var(--on);border-color:var(--acc);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+.ev{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.ev:first-child{border-top:0}
+.mg{align-self:start;text-align:center;border-radius:10px;padding:8px 0;font-weight:800;font-size:1.5rem;line-height:1;color:var(--on);background:var(--grn)}
+.mg.m{background:var(--amb)}.mg.h{background:var(--red)}
+.ev b{display:block}.ev small{color:var(--mut)}
+.tag{display:inline-block;font-size:.78rem;border-radius:6px;padding:1px 7px;margin:4px 6px 0 0;border:1px solid var(--line)}
+.tag.ok{border-color:var(--grn);color:var(--grn)}.tag.w{border-color:var(--amb);color:var(--amb)}
+.lk{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;font-size:.88rem}.lk a,.lk button{color:var(--acc);background:none;border:0;padding:4px 0;min-height:0;text-decoration:underline}
+.empty{color:var(--mut);padding:10px 0}
+details summary{cursor:pointer;font-weight:700}details ul{margin:8px 0 0;padding-left:20px}
+.note{font-size:.82rem;color:var(--mut)}
+#al{position:fixed;inset:0;z-index:9;background:var(--red);color:#fff;display:grid;place-items:center;padding:20px;text-align:center}
+#al[hidden]{display:none}#al div{max-width:480px}#al h2{font-size:2rem;margin:0 0 6px}#al p{margin:6px 0;font-size:1.1rem}
+#al button{background:#fff;color:#7a1010;border-color:#fff;font-weight:700;margin:8px 4px 0}
+@media(prefers-reduced-motion:no-preference){#al:not([hidden]){animation:pu 1s ease-in-out infinite alternate}}
+@keyframes pu{from{filter:brightness(1)}to{filter:brightness(1.25)}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+<h1>Sismos en vivo</h1>
+<p class="st" id="st" aria-live="polite">Conectando con las fuentes…</p>
+<svg id="tr" viewBox="0 0 600 64" preserveAspectRatio="none" role="img" aria-label="Sismograma de las últimas 24 horas"><path id="tp" d="M0 32H600"/></svg>
+<p class="note" style="margin:3px 0 0">Últimas 24 horas: cada pico es un sismo; mientras más alto, mayor magnitud.</p>
+</header>
+
+<section class="card" aria-labelledby="h-a">
+<h2 id="h-a">Alertas y filtros</h2>
+<div class="set">
+<label>Zona<select id="reg"><option value="co">Colombia y alrededores</option><option value="sa">Sudamérica</option><option value="w">Todo el mundo</option></select></label>
+<label>Magnitud mínima en la lista<select id="mag"><option value="0">Todas</option><option value="2.5">2.5+</option><option value="4">4+</option><option value="5">5+</option></select></label>
+<label>Periodo<select id="per"><option value="hour">Última hora</option><option value="day">Último día</option><option value="week">Última semana</option></select></label>
+<label>Alertar desde magnitud<select id="am"><option value="3">3</option><option value="4">4</option><option value="4.5">4.5</option><option value="5">5</option><option value="6">6</option></select></label>
+<label>Alertar dentro de<select id="rad"><option value="100">100 km de mí</option><option value="300">300 km de mí</option><option value="500">500 km de mí</option><option value="1000">1000 km de mí</option><option value="0">Toda la zona elegida</option></select></label>
+</div>
+<div class="row">
+<button class="p" id="on" type="button">Activar alertas y ubicación</button>
+<button id="test" type="button">Probar alerta</button>
+<button id="inst" type="button" hidden>Instalar app</button>
+</div>
+<p class="note" id="ons"></p>
+<p class="note">En iPhone: Compartir &gt; Agregar a pantalla de inicio. Las alertas suenan mientras la app esté abierta o instalada y con internet.</p>
+</section>
+
+<section class="card" aria-labelledby="h-l">
+<h2 id="h-l">Sismos recientes</h2>
+<div id="ls"><p class="empty">Cargando…</p></div>
+</section>
+
+<section class="card">
+<details open><summary>Qué hacer si tiembla</summary>
+<ul>
+<li><b>Durante:</b> agáchate, cúbrete la cabeza y el cuello bajo una mesa firme y sujétate. Aléjate de ventanas, espejos y objetos que puedan caer.</li>
+<li><b>Si estás en la calle:</b> aléjate de edificios, postes y cables. Busca un espacio abierto.</li>
+<li><b>Después:</b> sal con calma hacia tu zona segura o punto de encuentro. No uses ascensores. Revisa gas, agua y electricidad. Prepárate para réplicas.</li>
+<li><b>Prepárate hoy:</b> acuerda con tu familia el punto de encuentro y ten una mochila con agua, linterna, radio, botiquín y documentos.</li>
+</ul></details>
+</section>
+
+<p class="note">Esta app informa los sismos <b>después</b> de que ocurren y fueron registrados. No los predice ni avisa antes de que sucedan. Los datos pueden cambiar mientras las agencias los revisan. Fuente oficial en Colombia: <a href="https://www.sgc.gov.co" target="_blank" rel="noopener">Servicio Geológico Colombiano</a>. Datos: USGS y EMSC.</p>
+</main>
+
+<div id="al" hidden role="alertdialog" aria-labelledby="al-t"><div>
+<h2 id="al-t"></h2><p id="al-p"></p><p id="al-s"></p>
+<p><b>Si sientes temblor: agáchate, cúbrete y sujétate.</b></p>
+<button id="al-sh" type="button">Compartir por WhatsApp</button><button id="al-ok" type="button">Entendido</button>
+</div></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const PER={hour:36e5,day:864e5,week:6048e5};
+const BOX={co:[-5,14,-82,-66],sa:[-56,13,-82,-34]};
+let cfg=Object.assign({reg:'co',mag:2.5,per:'day',am:4.5,rad:500,loc:null,on:false},JSON.parse(localStorage.getItem('sis_cfg')||'{}'));
+let seen=JSON.parse(localStorage.getItem('sis_seen')||'[]'),U=[],E=[],first=true,okU=null,okE=false,ac=null,last=null;
+const save=()=>localStorage.setItem('sis_cfg',JSON.stringify(cfg));
+const km=(a,b)=>{const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lon-a.lon)*r,h=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742*Math.asin(Math.sqrt(h))};
+const inReg=e=>{const b=BOX[cfg.reg];return !b||(e.lat>=b[0]&&e.lat<=b[1]&&e.lon>=b[2]&&e.lon<=b[3])};
+const hm=t=>new Date(t).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<1?'ahora':m<60?'hace '+m+' min':m<1440?'hace '+Math.round(m/60)+' h':'hace '+Math.round(m/1440)+' d'};
+
+async function loadU(){
+  const m=cfg.mag>=4?'4.5':cfg.mag>=2.5?'2.5':'all',p=cfg.per==='week'?'week':cfg.per==='hour'?'hour':'day';
+  const j=await (await fetch(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${m}_${p}.geojson`)).json();
+  return j.features.filter(f=>f.properties.mag!=null).map(f=>({id:f.id,t:f.properties.time,mag:f.properties.mag,lon:f.geometry.coordinates[0],lat:f.geometry.coordinates[1],dep:f.geometry.coordinates[2],place:f.properties.place,url:f.properties.url}));
+}
+async function loadE(){
+  const s=new Date(Date.now()-PER[cfg.per]).toISOString().slice(0,19);
+  const j=await (await fetch(`https://www.seismicportal.eu/fdsnws/event/1/query?format=json&limit=500&orderby=time&minmag=${Math.max(0,cfg.mag)}&start=${s}`)).json();
+  return j.features.map(toE);
+}
+const toE=f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];return{id:p.unid||f.id,t:Date.parse(p.time),mag:+p.mag,lon:p.lon??c[0],lat:p.lat??c[1],dep:p.depth??Math.abs(c[2]||0),place:p.flynn_region}};
+
+function merge(){
+  const out=[],used=new Set();
+  for(const u of U){
+    const m=E.find(e=>!used.has(e.id)&&Math.abs(e.t-u.t)<9e4&&km(u,e)<150&&Math.abs(e.mag-u.mag)<1.3);
+    if(m){used.add(m.id);out.push({...u,srcs:2,emsc:m.id})}else out.push({...u,srcs:1,only:'USGS'});
+  }
+  for(const e of E)if(!used.has(e.id))out.push({...e,srcs:1,only:'EMSC',emsc:e.id});
+  return out.filter(e=>e.mag>=cfg.mag&&e.t>Date.now()-PER[cfg.per]&&e.lat!=null).sort((a,b)=>b.t-a.t);
+}
+const dist=e=>cfg.loc?Math.round(km(cfg.loc,e)):null;
+
+function trace(L){
+  const now=Date.now(),t0=now-864e5;let d='M0 32';
+  L.filter(e=>e.t>t0&&e.mag>=2.5&&inReg(e)).sort((a,b)=>a.t-b.t).forEach(e=>{
+    const x=Math.round((e.t-t0)/864e5*600),a=Math.min(30,e.mag*5);
+    d+=`H${Math.max(0,x-7)}L${x-4} ${32-a*.5}L${x-1} ${32+a}L${x+2} ${32-a}L${x+5} ${32+a*.4}L${x+8} 32`;
+  });
+  $('#tp').setAttribute('d',d+'H600');
+}
+function draw(){
+  const L=merge(),R=L.filter(inReg);
+  trace(L);
+  $('#ls').innerHTML=R.length?R.map(e=>{
+    const k=dist(e),c=e.mag>=5?'h':e.mag>=4?'m':'';
+    return `<article class="ev"><div class="mg ${c}" aria-label="Magnitud ${e.mag.toFixed(1)}">${e.mag.toFixed(1)}</div><div>
+<b>${esc(e.place||'Ubicación sin nombre')}</b>
+<small>${hm(e.t)} · ${ago(e.t)} · prof. ${Math.round(e.dep||0)} km${k!=null?' · a '+k+' km de ti':''}</small><br>
+<span class="tag ${e.srcs>1?'ok':'w'}">${e.srcs>1?'Confirmado por 2 fuentes':'Solo '+e.only+' · por confirmar'}</span>
+<div class="lk">${e.url?`<a href="${e.url}" target="_blank" rel="noopener">USGS</a>`:''}${e.emsc?`<a href="https://www.seismicportal.eu/eventdetails.html?unid=${encodeURIComponent(e.emsc)}" target="_blank" rel="noopener">EMSC</a>`:''}<a href="https://www.sgc.gov.co" target="_blank" rel="noopener">Verificar en SGC</a><a href="https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lon}#map=7/${e.lat}/${e.lon}" target="_blank" rel="noopener">Mapa</a><button type="button" data-sh="${esc(e.id)}">Compartir</button></div></div></article>`}).join(''):'<p class="empty">No hay sismos con estos filtros. Prueba con otro periodo o una magnitud menor.</p>';
+  document.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>share(R.find(e=>e.id===b.dataset.sh)));
+  const d=(ok,n)=>`<span class="dot ${ok===null?'':ok?'ok':'bad'}"></span>${n}`;
+  $('#st').innerHTML=`${last?'Actualizado '+hm(last)+' · ':''}${d(okU,'USGS')} &nbsp; ${d(okE,'EMSC en vivo')}`;
+  checkAlerts(L);
+}
+const wasSeen=e=>seen.some(s=>Math.abs(s[0]-e.t)<12e4&&km({lat:s[1],lon:s[2]},e)<150);
+function checkAlerts(L){
+  for(const e of L){
+    if(wasSeen(e))continue;
+    seen.push([e.t,e.lat,e.lon]);seen=seen.slice(-150);
+    if(first||Date.now()-e.t>18e5||e.mag<cfg.am)continue;
+    const k=dist(e),near=cfg.loc&&cfg.rad>0?k<=cfg.rad:inReg(e);
+    if(near)alarm(e);
+  }
+  first=false;localStorage.setItem('sis_seen',JSON.stringify(seen));
+}
+const msg=e=>`⚠️ Sismo M${e.mag.toFixed(1)} · ${e.place||'ubicación por confirmar'} · ${hm(e.t)}. ${e.srcs>1?'Confirmado por 2 fuentes.':'Aún por confirmar.'} Mantén la calma: agáchate, cúbrete y sujétate. Info oficial: https://www.sgc.gov.co`;
+const share=e=>window.open('https://wa.me/?text='+encodeURIComponent(msg(e)),'_blank');
+let cur=null;
+function alarm(e){
+  cur=e;const k=dist(e);
+  $('#al-t').textContent='Sismo M'+e.mag.toFixed(1);
+  $('#al-p').textContent=(e.place||'Ubicación por confirmar')+' · '+hm(e.t)+(k!=null?' · a '+k+' km de ti':'');
+  $('#al-s').textContent=e.srcs>1?'Confirmado por USGS y EMSC.':'Reportado por 1 fuente. Verificando.';
+  $('#al').hidden=false;
+  try{navigator.vibrate&&navigator.vibrate([400,200,400,200,800])}catch(x){}
+  beep();
+  if('Notification' in window&&Notification.permission==='granted'&&navigator.serviceWorker)navigator.serviceWorker.ready.then(r=>r.showNotification('Sismo M'+e.mag.toFixed(1),{body:(e.place||'')+' · '+hm(e.t),tag:'sismo',requireInteraction:true,icon:'icon-192.png'})).catch(()=>{});
+}
+function beep(){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();let t=ac.currentTime;
+  for(let i=0;i<6;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=i%2?660:880;g.gain.value=.25;o.connect(g);g.connect(ac.destination);o.start(t+i*.35);o.stop(t+i*.35+.3)}}catch(x){}
+}
+$('#al-ok').onclick=()=>{$('#al').hidden=true};
+$('#al-sh').onclick=()=>cur&&share(cur);
+
+async function refresh(){
+  const [u,e]=await Promise.allSettled([loadU(),loadE()]);
+  if(u.status==='fulfilled'){U=u.value;okU=true;last=Date.now()}else okU=false;
+  if(e.status==='fulfilled'){const ws=E.filter(x=>x.live);E=e.value.concat(ws.filter(w=>!e.value.some(x=>x.id===w.id)))}
+  draw();
+}
+let ws,wsOn=false;
+function live(){
+  try{ws=new WebSocket('wss://www.seismicportal.eu/standing_order/websocket')}catch(x){return}
+  ws.onopen=()=>{okE=true;draw()};
+  ws.onmessage=m=>{try{const d=JSON.parse(m.data),x=toE(d.data);if(!x.id||isNaN(x.t))return;x.live=1;E=E.filter(y=>y.id!==x.id);E.push(x);last=Date.now();draw()}catch(e){}};
+  ws.onclose=ws.onerror=()=>{okE=false;setTimeout(()=>{if(!ws||ws.readyState>1)live()},10000)};
+}
+
+for(const k of ['reg','mag','per','am','rad']){const el=$('#'+k);el.value=String(cfg[k]);el.onchange=()=>{cfg[k]=k==='reg'||k==='per'?el.value:+el.value;save();refresh()}}
+$('#on').onclick=async()=>{
+  beep();let s=[];
+  if('Notification' in window){const p=await Notification.requestPermission();s.push(p==='granted'?'Notificaciones activas':'Notificaciones no permitidas')}
+  await new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{cfg.loc={lat:p.coords.latitude,lon:p.coords.longitude};save();s.push('Ubicación guardada en este dispositivo');r()},()=>{s.push('Sin ubicación: se alertará por zona');r()},{timeout:10000}):r());
+  cfg.on=true;save();$('#ons').textContent=s.join(' · ');draw();
+};
+$('#test').onclick=()=>alarm({id:'test',t:Date.now(),mag:5.0,lat:cfg.loc?.lat||4.6,lon:cfg.loc?.lon||-74,place:'Prueba de alerta (no es un sismo real)',srcs:2});
+let ip;addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e;$('#inst').hidden=false});
+$('#inst').onclick=async()=>{if(ip){ip.prompt();await ip.userChoice;ip=null;$('#inst').hidden=true}};
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if(cfg.on)$('#ons').textContent=cfg.loc?'Alertas activas con tu ubicación.':'Alertas activas por zona.';
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+setInterval(refresh,6e4);refresh();live();
+</script>
+</body>
+</html>
