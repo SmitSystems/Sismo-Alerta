@@ -44,6 +44,17 @@ button{cursor:pointer}.p{background:var(--acc);color:var(--on);border-color:var(
 .empty{color:var(--mut);padding:8px 0}details summary{cursor:pointer;font-weight:700}details ul{margin:8px 0 0;padding-left:20px}
 #al{position:fixed;inset:0;z-index:9;background:var(--red);color:#fff;display:grid;place-items:center;padding:20px;text-align:center}#al[hidden]{display:none}
 #al div{max-width:480px}#al h2{font-size:2rem}#al p{margin:6px 0;font-size:1.1rem}#al button{background:#fff;color:#7a1010;border-color:#fff;font-weight:700;margin:8px 4px 0}
+
+input:not([type=checkbox]){font:inherit;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);min-height:42px;width:100%}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:8;width:68px;height:68px;border-radius:50%;border:3px solid #fff;background:var(--red);color:#fff;font-weight:900;font-size:1.15rem;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer}
+#sos{position:fixed;inset:0;z-index:10;background:#7a1010;color:#fff;overflow:auto;padding:calc(16px + env(safe-area-inset-top)) 16px 24px}#sos[hidden]{display:none}
+.sb{max-width:520px;margin:0 auto;text-align:center}.sb h2{font-size:1.7rem}.sb button,.sb a.b{width:100%;margin:6px 0;background:#fff;color:#7a1010;border-color:#fff;font-weight:700;min-height:52px;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.sb .sg{display:grid;gap:4px}.cd{font-size:6rem;font-weight:900;margin:8px 0;line-height:1}
+.cr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:center;margin:6px 0;text-align:left}.cr b{overflow:hidden;text-overflow:ellipsis}.cr a.b{margin:0;min-height:46px}
+.sb .gh{background:transparent;color:#fff;border-color:#fff}
+.cl{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)}.cl span{flex:1}.cl button{min-height:36px;padding:4px 10px}
+@media(prefers-reduced-motion:no-preference){#sos.fl{animation:pu2 .6s steps(2) infinite}}@keyframes pu2{50%{background:#fff;color:#000}}
 </style>
 </head>
 <body>
@@ -77,6 +88,12 @@ button{cursor:pointer}.p{background:var(--acc);color:var(--on);border-color:var(
 <div class="row"><button class="p" id="on" type="button">Activar alertas y ubicación</button><button id="test" type="button">Probar alerta</button><button id="inst" type="button" hidden>Instalar app</button></div>
 <p class="note" id="ons"></p>
 <p class="note">iPhone: Compartir &gt; Agregar a pantalla de inicio para recibir notificaciones push.</p></section>
+<section class="card" id="cc"><h2>Mis seres queridos (SOS)</h2>
+<p class="note">Se guardan solo en este dispositivo. Máximo 5.</p><div id="cl"></div>
+<div class="set"><label>Nombre<input id="cn" type="text" autocomplete="off" maxlength="30"></label><label>Celular<input id="cp" type="tel" inputmode="tel" placeholder="3001234567" maxlength="18"></label></div>
+<div class="row"><button class="p" id="ca" type="button">Agregar contacto</button></div>
+<label class="c" style="margin-top:10px"><input type="checkbox" id="shk"> Activar SOS con 5 sacudidas fuertes del celular</label>
+<p class="note">La sacudida solo funciona con la app abierta. Con la pantalla apagada usa la función de SOS de emergencia de tu celular (5 pulsaciones del botón de encendido en iPhone, o la que traiga tu Android). En Android también puedes mantener pulsado el icono de la app y elegir “SOS”.</p></section>
 <section class="card"><details><summary>Qué hacer si tiembla</summary><ul>
 <li><b>Durante:</b> agáchate, cúbrete cabeza y cuello bajo una mesa firme y sujétate. Aléjate de ventanas.</li>
 <li><b>En la calle:</b> aléjate de edificios, postes y cables.</li>
@@ -84,6 +101,15 @@ button{cursor:pointer}.p{background:var(--acc);color:var(--on);border-color:var(
 </div></div>
 <p class="note">Informa los sismos <b>después</b> de que ocurren; no los predice. Los datos pueden cambiar mientras las agencias los revisan. Fuente oficial en Colombia: <a href="https://www.sgc.gov.co" target="_blank" rel="noopener">Servicio Geológico Colombiano</a>. Datos: USGS, EMSC, GFZ.</p>
 </main>
+<button id="fab" class="fab" type="button" aria-label="SOS: avisar a mis seres queridos">SOS</button>
+<div id="sos" hidden role="dialog" aria-modal="true" aria-labelledby="sos-t"><div class="sb">
+<h2 id="sos-t">Pedir ayuda</h2>
+<div id="s1"><p>Elige qué te pasa. Se enviará tu ubicación exacta a quien elijas.</p><div class="sg"><button data-k="help" type="button">🆘 Necesito ayuda</button><button data-k="trap" type="button">🧱 Estoy atrapado/a</button><button data-k="lost" type="button">🧭 Estoy perdido/a</button><button data-k="safe" type="button">✅ Estoy a salvo</button></div></div>
+<div id="s2" hidden><p>Pidiendo ayuda en…</p><p class="cd" id="cd" aria-live="assertive">5</p><button id="cx" type="button">Cancelar</button></div>
+<div id="s3" hidden><p id="gps" aria-live="polite"></p><div id="tg"></div>
+<button id="shr" type="button">Compartir con otra app…</button><button id="cpy" type="button">Copiar mensaje</button><a class="b" id="c123" href="tel:123">📞 Llamar al 123</a><button id="sir" type="button" class="gh">🔊 Sirena y destellos</button>
+<p class="note" style="color:#fff;opacity:.85">Toca el botón de cada persona para enviar: tu celular pide confirmar el envío. Si estás atrapado/a: golpea tuberías o paredes y usa un silbato; ahorra batería.</p></div>
+<button id="sx" type="button" class="gh">Cerrar</button></div></div>
 <div id="al" hidden role="alertdialog" aria-labelledby="al-t"><div><h2 id="al-t"></h2><p id="al-p"></p><p id="al-s"></p><p><b>Si sientes temblor: agáchate, cúbrete y sujétate.</b></p><button id="al-sh" type="button">Compartir por WhatsApp</button><button id="al-ok" type="button">Entendido</button></div></div>
 
 <script>
@@ -215,6 +241,52 @@ $('#on').onclick=async()=>{
 $('#test').onclick=()=>alarm({id:'test',t:Date.now(),mag:5.0,lat:cfg.loc?.lat||4.6,lon:cfg.loc?.lon||-74,place:'Prueba de alerta (no es un sismo real)',srcs:2});
 let ip;addEventListener('beforeinstallprompt',e=>{e.preventDefault();ip=e;$('#inst').hidden=false});
 $('#inst').onclick=async()=>{if(ip){ip.prompt();await ip.userChoice;ip=null;$('#inst').hidden=true}};
+
+
+/* ---- SOS y seres queridos ---- */
+let ct=ls('sis_ct',[]),cdT=null,sir=null,wl=null,sMsg='';
+const saveCt=()=>{try{localStorage.setItem('sis_ct',JSON.stringify(ct))}catch(x){}};
+const norm=v=>{const d=String(v).replace(/\D/g,'');return d.length===10&&d[0]==='3'?'57'+d:d};
+function renderCt(){
+  $('#cl').innerHTML=ct.length?ct.map((c,i)=>`<div class="cl"><span><b>${esc(c.n)}</b> · +${esc(c.p)}</span><button type="button" data-rm="${i}" aria-label="Quitar ${esc(c.n)}">Quitar</button></div>`).join(''):'<p class="empty">Aún no agregas a nadie.</p>';
+  document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ct.splice(+b.dataset.rm,1);saveCt();renderCt()});
+}
+$('#ca').onclick=()=>{const n=$('#cn').value.trim(),p=norm($('#cp').value);
+  if(!n||p.length<8||ct.length>=5)return;ct.push({n,p});saveCt();$('#cn').value=$('#cp').value='';renderCt()};
+const SK={help:'🆘 NECESITO AYUDA',trap:'🆘 ESTOY ATRAPADO/A, necesito rescate',lost:'🆘 ESTOY PERDIDO/A, ayúdenme a encontrarme',safe:'✅ Estoy a salvo, no se preocupen'};
+function getPos(){return new Promise(r=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>r({lat:p.coords.latitude,lon:p.coords.longitude,acc:Math.round(p.coords.accuracy)}),()=>r(cfg.loc?{...cfg.loc,old:1}:null),{enableHighAccuracy:true,timeout:15000,maximumAge:0}):r(cfg.loc?{...cfg.loc,old:1}:null))}
+const show=n=>{for(const i of [1,2,3])$('#s'+i).hidden=i!==n};
+function openSos(k){$('#sos').hidden=false;try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(w=>wl=w).catch(()=>{})}catch(x){}k?pick(k):show(1)}
+function closeSos(){clearInterval(cdT);stopSir();try{wl&&wl.release()}catch(x){}$('#sos').hidden=true}
+function pick(k){window.sk=k;if(k==='safe')return go();show(2);let n=5;$('#cd').textContent=n;
+  cdT=setInterval(()=>{n--;$('#cd').textContent=n;try{navigator.vibrate&&navigator.vibrate(150)}catch(x){}if(n<=0){clearInterval(cdT);go()}},1000)}
+async function go(){
+  show(3);$('#gps').textContent='Obteniendo tu ubicación GPS…';$('#tg').innerHTML='';
+  const p=await getPos(),la=p&&p.lat.toFixed(6),lo=p&&p.lon.toFixed(6);
+  $('#gps').textContent=p?(p.old?'No hay GPS ahora: se usa tu última ubicación guardada.':`Ubicación obtenida (±${p.acc} m)`):'No se pudo obtener la ubicación. Avisa por voz o llama al 123.';
+  sMsg=`${SK[window.sk]}. ${p?`Mi ubicación: https://maps.google.com/?q=${la},${lo} (${la}, ${lo}${p.acc?', precisión ±'+p.acc+' m':''}${p.old?', última conocida':''}).`:'No pude obtener mi ubicación GPS.'} Hora: ${hm(Date.now())}. Enviado desde Sismo-Alerta.`;
+  const q=encodeURIComponent(sMsg);
+  $('#tg').innerHTML=ct.length?ct.map(c=>`<div class="cr"><b>${esc(c.n)}</b><a class="b" target="_blank" rel="noopener" href="https://wa.me/${c.p}?text=${q}">WhatsApp</a><a class="b" href="sms:+${c.p}?&body=${q}">SMS</a></div>`).join(''):'<p>Agrega contactos en “Mis seres queridos” o usa Compartir.</p>';
+  $('#sir').hidden=window.sk==='safe';
+  if(window.sk!=='safe'){try{navigator.vibrate&&navigator.vibrate([500,200,500])}catch(x){}}
+}
+function stopSir(){clearInterval(sir);sir=null;$('#sos').classList.remove('fl')}
+$('#sir').onclick=()=>{if(sir)return stopSir();beep();sir=setInterval(beep,2300);$('#sos').classList.add('fl')};
+$('#shr').onclick=()=>navigator.share?navigator.share({text:sMsg}).catch(()=>{}):window.open('https://wa.me/?text='+encodeURIComponent(sMsg),'_blank');
+$('#cpy').onclick=()=>navigator.clipboard&&navigator.clipboard.writeText(sMsg).then(()=>{$('#cpy').textContent='Copiado ✔'}).catch(()=>{});
+$('#fab').onclick=()=>openSos();$('#sx').onclick=closeSos;$('#cx').onclick=()=>{clearInterval(cdT);show(1)};
+document.querySelectorAll('#s1 [data-k]').forEach(b=>b.onclick=()=>pick(b.dataset.k));
+addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#sos').hidden)closeSos()});
+const hs=()=>{if(location.hash==='#sos'){history.replaceState(null,'',location.pathname);openSos('help')}};addEventListener('hashchange',hs);
+/* 5 sacudidas fuertes (solo con la app abierta) */
+let sh=[],shT=0;
+function onMotion(e){const a=e.accelerationIncludingGravity;if(!a)return;const g=Math.hypot(a.x||0,a.y||0,a.z||0),t=Date.now();
+  if(g>28&&t-shT>250){shT=t;sh=sh.filter(x=>t-x<3000);sh.push(t);if(sh.length>=5&&$('#sos').hidden){sh=[];openSos('help')}}}
+$('#shk').checked=!!cfg.shake;
+$('#shk').onchange=async e=>{cfg.shake=e.target.checked;save();
+  if(cfg.shake){try{if(window.DeviceMotionEvent&&DeviceMotionEvent.requestPermission&&await DeviceMotionEvent.requestPermission()!=='granted'){cfg.shake=e.target.checked=false;save();return}}catch(x){}addEventListener('devicemotion',onMotion)}else removeEventListener('devicemotion',onMotion)};
+if(cfg.shake)addEventListener('devicemotion',onMotion);
+renderCt();hs();
 
 async function refresh(){
   const [u,e]=await Promise.allSettled([loadU(),loadE()]);
