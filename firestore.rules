@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    // Cada dispositivo puede registrarse/actualizar sus preferencias; nadie puede leerlas ni borrarlas desde la web.
+    match /devices/{token} {
+      allow create, update: if request.resource.data.keys().hasOnly(['am','rad','lat','lon','inc','ua','at'])
+        && request.resource.data.am is number && request.resource.data.rad is number;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
