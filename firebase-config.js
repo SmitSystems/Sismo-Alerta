@@ -1,10 +1,8 @@
-// Pega aquí la config de tu app web (Firebase Console > Configuración del proyecto > Tus apps > Web)
 export const firebaseConfig = {
-  apiKey: "REEMPLAZA",
-  authDomain: "TU-PROYECTO.firebaseapp.com",
-  projectId: "TU-PROYECTO",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:xxxxxxxx"
+  apiKey: "AIzaSyC0h6jB148qwSyORL0SUx94qGwrQvpNtQo",
+  authDomain: "sismo-alerta-213f7.firebaseapp.com",
+  projectId: "sismo-alerta-213f7",
+  messagingSenderId: "321855979459",
+  appId: "1:321855979459:web:1f4385f7ed36c6df110776"
 };
-// Firebase Console > Configuración > Cloud Messaging > Certificados push web > Par de claves
-export const VAPID = "REEMPLAZA";
+export const VAPID = "BJ0jKXnQi7IjAJFHtADV_EfJgLWgH7QpRAlFZbW3NT1niTdQEK7YSAMl_42MFe7CC3796iarOXbLW8AQh4hNNZs";
