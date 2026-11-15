@@ -17,3 +17,12 @@ Panel que corrobora alertas sísmicas entre USGS, EMSC y GFZ, y notifica por Fir
 7. Abre la app, pulsa **Activar alertas y ubicación**.
 
 Notas: GitHub puede retrasar los cron varios minutos; para alertas de segundos, migra el verificador a Cloud Functions (plan Blaze). Sube `V` en `sw.js` en cada versión.
+
+## Publicar en Firebase Hosting (alternativa a GitHub Pages)
+```
+npm i -g firebase-tools
+firebase login
+firebase use --add        # elige tu proyecto
+firebase deploy --only hosting,firestore:rules
+```
+La URL será `https://TU-PROYECTO.web.app` (agrégala en Authentication > Dominios autorizados si usas otro dominio).
