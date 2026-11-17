@@ -99,7 +99,7 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
 <li><b>En la calle:</b> aléjate de edificios, postes y cables.</li>
 <li><b>Después:</b> sal con calma, sin ascensores. Revisa gas, agua y luz. Prepárate para réplicas.</li></ul></details></section>
 </div></div>
-<p class="note">Informa los sismos <b>después</b> de que ocurren; no los predice. Los datos pueden cambiar mientras las agencias los revisan. Fuente oficial en Colombia: <a href="https://www.sgc.gov.co" target="_blank" rel="noopener">Servicio Geológico Colombiano</a>. Datos: USGS, EMSC, GFZ.</p>
+<p class="note">Informa los sismos <b>después</b> de que ocurren; no los predice. Los datos pueden cambiar mientras las agencias los revisan. Fuente oficial en Colombia: <a href="https://www.sgc.gov.co" target="_blank" rel="noopener">Servicio Geológico Colombiano</a>. Datos: USGS, EMSC, SGC y GFZ.</p>
 </main>
 <button id="fab" class="fab" type="button" aria-label="SOS: avisar a mis seres queridos">SOS</button>
 <div id="sos" hidden role="dialog" aria-modal="true" aria-labelledby="sos-t"><div class="sb">
@@ -118,13 +118,46 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const PER={hour:36e5,day:864e5,week:6048e5},BOX={co:[-5,14,-82,-66],sa:[-56,13,-82,-34]};
 const ls=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(x){return d}};
 let cfg=Object.assign({reg:'co',mag:2.5,per:'day',am:4.5,rad:500,inc:false,loc:null,on:false},ls('sis_cfg',{}));
-let seen=ls('sis_seen',[]),U=[],E=[],first=true,okU=null,okE=false,ac=null,last=null,fb=null;
+let seen=ls('sis_seen',[]),U=[],E=[],S=[],okS=null,first=true,okU=null,okE=false,ac=null,last=null,fb=null;
 const save=()=>{try{localStorage.setItem('sis_cfg',JSON.stringify(cfg))}catch(x){}};
 const km=(a,b)=>{const r=Math.PI/180,x=(b.lat-a.lat)*r,y=(b.lon-a.lon)*r,h=Math.sin(x/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(y/2)**2;return 12742*Math.asin(Math.sqrt(h))};
 const inReg=e=>{const b=BOX[cfg.reg];return !b||(e.lat>=b[0]&&e.lat<=b[1]&&e.lon>=b[2]&&e.lon<=b[3])};
 const hm=t=>new Date(t).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
 const ago=t=>{const m=Math.max(0,Math.round((Date.now()-t)/6e4));return m<1?'ahora':m<60?'hace '+m+' min':m<1440?'hace '+Math.round(m/60)+' h':'hace '+Math.round(m/1440)+' d'};
 
+
+/* SGC: catálogo oficial vía ArcGIS REST. Descubre solo el servicio dentro de la carpeta catalogo_sismos. */
+const SGC_ROOT='https://srvags.sgc.gov.co/arcgis/rest/services';
+let sgcLayer=null;
+const jf=async u=>{const r=await fetch(u);if(!r.ok)throw 0;const j=await r.json();if(j.error)throw 0;return j};
+const fld=(F,re)=>(F.find(f=>re.test(f.name))||{}).name;
+async function sgcFind(){
+  const d=await jf(SGC_ROOT+'/catalogo_sismos?f=pjson');
+  for(const x of (d.services||[]).filter(x=>/MapServer|FeatureServer/.test(x.type))){
+    const u=`${SGC_ROOT}/${x.name}/${x.type}`,m=await jf(u+'?f=pjson').catch(()=>null);
+    for(const l of (m&&m.layers)||[]){
+      const L=await jf(`${u}/${l.id}?f=pjson`).catch(()=>null);if(!L||!/Point/i.test(L.geometryType||''))continue;
+      const F=L.fields||[],t=F.find(f=>f.type==='esriFieldTypeDate'),g=fld(F,/^(mag|magnitud|magnitude|ml|mw)/i);
+      if(t&&g)return{url:`${u}/${l.id}`,t:t.name,m:g,d:fld(F,/prof|depth/i),p:fld(F,/lugar|local|munic|place|region|ubic/i)};
+    }
+  }
+  throw 0;
+}
+async function loadS(){
+  sgcLayer=sgcLayer||await sgcFind();
+  const q=new URLSearchParams({where:'1=1',outFields:'*',orderByFields:sgcLayer.t+' DESC',resultRecordCount:'300',outSR:'4326',returnGeometry:'true',f:'json'});
+  const j=await jf(sgcLayer.url+'/query?'+q);
+  return (j.features||[]).map(f=>{const a=f.attributes||{},g=f.geometry||{};
+    return{id:'sgc'+(a.OBJECTID||a[sgcLayer.t]),t:+a[sgcLayer.t],mag:+a[sgcLayer.m],lon:g.x,lat:g.y,dep:sgcLayer.d?+a[sgcLayer.d]:0,place:sgcLayer.p?a[sgcLayer.p]:''}})
+   .filter(e=>isFinite(e.t)&&isFinite(e.mag)&&isFinite(e.lat)&&isFinite(e.lon));
+}
+/* Si el SGC publica hora local sin zona, frente a USGS/EMSC la diferencia típica es ~5 h: se corrige. */
+function sgcShift(){
+  const R=U.concat(E),d=[];
+  for(const s of S){const m=R.find(r=>km(s,r)<150&&Math.abs(r.mag-s.mag)<1&&Math.abs(r.t-s.t)<7*36e5);if(m)d.push(m.t-s.t)}
+  if(d.length<3)return 0;d.sort((a,b)=>a-b);const x=d[d.length>>1];
+  return Math.abs(x-5*36e5)<6e5?5*36e5:0;
+}
 async function loadU(){
   const m=cfg.mag>=4?'4.5':cfg.mag>=2.5?'2.5':'all';
   const j=await (await fetch(`https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${m}_${cfg.per}.geojson`)).json();
@@ -138,12 +171,17 @@ async function loadE(){
 const toE=f=>{const p=f.properties||{},c=f.geometry?.coordinates||[];return{id:p.unid||f.id,t:Date.parse(p.time),mag:+p.mag,lon:p.lon??c[0],lat:p.lat??c[1],dep:p.depth??Math.abs(c[2]||0),place:p.flynn_region}};
 
 function merge(){
-  const out=[],used=new Set();
+  const out=[],used=new Set(),sh=sgcShift();
   for(const u of U){
     const m=E.find(e=>!used.has(e.id)&&Math.abs(e.t-u.t)<9e4&&km(u,e)<150&&Math.abs(e.mag-u.mag)<1.3);
-    if(m){used.add(m.id);out.push({...u,srcs:2,emsc:m.id,um:u.mag,em:m.mag,mag:(u.mag+m.mag)/2})}else out.push({...u,srcs:1,only:'USGS'});
+    if(m){used.add(m.id);out.push({...u,src:['USGS','EMSC'],emsc:m.id,um:u.mag,em:m.mag,mag:(u.mag+m.mag)/2})}else out.push({...u,src:['USGS']});
   }
-  for(const e of E)if(!used.has(e.id))out.push({...e,srcs:1,only:'EMSC',emsc:e.id});
+  for(const e of E)if(!used.has(e.id))out.push({...e,src:['EMSC'],emsc:e.id});
+  for(const s0 of S){
+    const s={...s0,t:s0.t+sh},m=out.find(e=>!e.sg&&Math.abs(e.t-s.t)<12e4&&km(s,e)<150&&Math.abs(e.mag-s.mag)<1.3);
+    if(m){m.sg=1;m.src=m.src.concat('SGC')}else out.push({...s,src:['SGC'],sg:1});
+  }
+  out.forEach(e=>{e.srcs=e.src.length;e.only=e.src[0]});
   return out.filter(e=>e.mag>=cfg.mag&&e.t>Date.now()-PER[cfg.per]&&e.lat!=null).sort((a,b)=>b.t-a.t);
 }
 // Inconsistencia: 1 sola fuente tras 10 min (M>=3) o magnitudes con diferencia >=0.7
@@ -171,12 +209,12 @@ function draw(){
     return `<article class="ev"><div class="mg ${c}" aria-label="Magnitud ${e.mag.toFixed(1)}">${e.mag.toFixed(1)}</div><div>
 <b>${esc(e.place||'Ubicación sin nombre')}</b>
 <small>${hm(e.t)} · ${ago(e.t)} · prof. ${Math.round(e.dep||0)} km${k!=null?' · a '+k+' km de ti':''}</small><br>
-<span class="tag ${e.srcs>1?'ok':'w'}">${e.srcs>1?'✔ Confirmado por USGS y EMSC':'Solo '+e.only+' · por confirmar'}</span>${x?`<span class="tag x">⚠ ${esc(x)}</span>`:''}
-<div class="lk">${e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener">USGS</a>`:''}${e.emsc?`<a href="https://www.seismicportal.eu/eventdetails.html?unid=${encodeURIComponent(e.emsc)}" target="_blank" rel="noopener">EMSC</a>`:''}<a href="https://www.sgc.gov.co" target="_blank" rel="noopener">Verificar en SGC</a><a href="https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lon}#map=7/${e.lat}/${e.lon}" target="_blank" rel="noopener">Mapa</a><button type="button" data-sh="${esc(e.id)}">Compartir</button></div></div></article>`}).join(''):'<p class="empty">No hay sismos con estos filtros.</p>';
+${!e.sg&&e.lat>-5&&e.lat<14&&e.lon>-82&&e.lon<-66?'<small>Colombia: confirma en el SGC (fuente oficial)</small><br>':''}<span class="tag ${e.srcs>1?'ok':'w'}">${e.srcs>1?'✔ Confirmado por '+e.src.join(', '):(e.only==='SGC'?'Oficial SGC · por confirmar con otras redes':'Solo '+e.only+' · por confirmar')}</span>${x?`<span class="tag x">⚠ ${esc(x)}</span>`:''}
+<div class="lk">${e.url?`<a href="${esc(e.url)}" target="_blank" rel="noopener">USGS</a>`:''}${e.emsc?`<a href="https://www.seismicportal.eu/eventdetails.html?unid=${encodeURIComponent(e.emsc)}" target="_blank" rel="noopener">EMSC</a>`:''}<a href="https://www2.sgc.gov.co/Paginas/aplicaciones-sismos.aspx" target="_blank" rel="noopener">Verificar en SGC</a><a href="https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lon}#map=7/${e.lat}/${e.lon}" target="_blank" rel="noopener">Mapa</a><button type="button" data-sh="${esc(e.id)}">Compartir</button></div></div></article>`}).join(''):'<p class="empty">No hay sismos con estos filtros.</p>';
   document.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>share(R.find(e=>e.id===b.dataset.sh)));
   const d=ok=>`<span class="dot ${ok===null?'':ok?'ok':'bad'}"></span>`;
   $('#st').innerHTML=`${d(okU&&okE)}${okU&&okE?'En vivo':okU||okE?'Parcial':'Sin conexión'}${last?' · '+hm(last):''}`;
-  $('#srcs').innerHTML=`<div class="src">${d(okU)}USGS<span>${okU?'feed 1 min':'sin respuesta'}</span></div><div class="src">${d(okE)}EMSC<span>${okE?'tiempo real (WebSocket)':'reconectando'}</span></div><div class="src">${d(fb?true:null)}Notificaciones push<span>${fb?'Firebase activo':'sin activar'}</span></div><div class="src">${d(null)}SGC / GFZ<span>vía servidor</span></div>`;
+  $('#srcs').innerHTML=`<div class="src">${d(okU)}USGS<span>${okU?'feed 1 min':'sin respuesta'}</span></div><div class="src">${d(okE)}EMSC<span>${okE?'tiempo real (WebSocket)':'reconectando'}</span></div><div class="src">${d(fb?true:null)}Notificaciones push<span>${fb?'Firebase activo':'sin activar'}</span></div><div class="src">${d(okS)}SGC<span>${okS?'catálogo oficial':okS===false?'sin respuesta':'buscando…'}</span></div><div class="src">${d(null)}GFZ<span>vía servidor</span></div>`;
   checkAlerts(L);
 }
 const wasSeen=e=>seen.some(s=>Math.abs(s[0]-e.t)<12e4&&km({lat:s[1],lon:s[2]},e)<150);
@@ -289,7 +327,8 @@ if(cfg.shake)addEventListener('devicemotion',onMotion);
 renderCt();hs();
 
 async function refresh(){
-  const [u,e]=await Promise.allSettled([loadU(),loadE()]);
+  const [u,e,g]=await Promise.allSettled([loadU(),loadE(),loadS()]);
+  if(g.status==='fulfilled'){S=g.value;okS=true}else okS=false;
   if(u.status==='fulfilled'){U=u.value;okU=true;last=Date.now()}else okU=false;
   if(e.status==='fulfilled'){const ws=E.filter(x=>x.live);E=e.value.concat(ws.filter(w=>!e.value.some(x=>x.id===w.id)))}
   draw();

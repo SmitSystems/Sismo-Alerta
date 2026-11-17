@@ -1,8 +1,8 @@
 # Sismo-Alerta
-Panel que corrobora alertas sísmicas entre USGS, EMSC y GFZ, y notifica por Firebase solo lo verificado.
+Panel que corrobora alertas sísmicas entre USGS, EMSC, SGC (Colombia) y GFZ, y notifica por Firebase solo lo verificado.
 
 ## Arquitectura
-- **Web (GitHub Pages)**: `index.html` + `sw.js`. Dashboard en vivo; registra el token FCM y tus preferencias en Firestore (`devices`).
+- **Web (GitHub Pages)**: `index.html` + `sw.js`. Dashboard en vivo con USGS, EMSC y el catálogo oficial del SGC (ArcGIS REST, carpeta `catalogo_sismos`, autodetectado); registra el token FCM y tus preferencias en Firestore (`devices`).
 - **Verificador (GitHub Actions, cada 5 min)**: `scripts/verify-and-notify.mjs` consulta las 3 fuentes, las cruza y envía push por FCM.
   - **Alerta**: ≥2 fuentes coinciden (±120 s, 150 km, magnitud <0.7 de diferencia).
   - **Inconsistencia** (solo a quien la active): una sola fuente tras 10 min, o magnitudes que difieren ≥0.7.
@@ -26,3 +26,6 @@ firebase use --add        # elige tu proyecto
 firebase deploy --only hosting,firestore:rules
 ```
 La URL será `https://TU-PROYECTO.web.app` (agrégala en Authentication > Dominios autorizados si usas otro dominio).
+
+## SGC en el panel
+El panel consulta el catálogo del Servicio Geológico Colombiano y lo cruza con USGS y EMSC (±120 s, 150 km). Si el SGC no responde, el panel muestra "SGC sin respuesta" y sigue con las otras fuentes. El verificador de servidor (`scripts/verify-and-notify.mjs`) no venía en los archivos: para que las notificaciones push también usen el SGC, hay que sumarle esta fuente.

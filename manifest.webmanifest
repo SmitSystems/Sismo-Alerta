@@ -2,7 +2,7 @@
  "id": "./",
  "name": "Sismos en vivo",
  "short_name": "Sismos",
- "description": "Sismos en tiempo real con confirmación de USGS y EMSC y alertas.",
+ "description": "Sismos en tiempo real con confirmación de USGS, EMSC y SGC y alertas.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",

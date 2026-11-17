@@ -4,7 +4,13 @@ service cloud.firestore {
     // Cada dispositivo puede registrarse/actualizar sus preferencias; nadie puede leerlas ni borrarlas desde la web.
     match /devices/{token} {
       allow create, update: if request.resource.data.keys().hasOnly(['am','rad','lat','lon','inc','ua','at'])
-        && request.resource.data.am is number && request.resource.data.rad is number;
+        && request.resource.data.am is number && request.resource.data.am >= 0 && request.resource.data.am <= 10
+        && request.resource.data.rad is number && request.resource.data.rad >= 0 && request.resource.data.rad <= 20000
+        && (!('lat' in request.resource.data) || (request.resource.data.lat is number && request.resource.data.lat >= -90 && request.resource.data.lat <= 90))
+        && (!('lon' in request.resource.data) || (request.resource.data.lon is number && request.resource.data.lon >= -180 && request.resource.data.lon <= 180))
+        && (!('inc' in request.resource.data) || request.resource.data.inc is bool)
+        && (!('ua' in request.resource.data) || (request.resource.data.ua is string && request.resource.data.ua.size() <= 300))
+        && token.size() <= 4096;
     }
     match /{document=**} { allow read, write: if false; }
   }
